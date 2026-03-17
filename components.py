@@ -76,7 +76,7 @@ def display_conversation_log():
                         icon = utils.get_source_icon(message['content']['main_file_path'])
                         # 参照元ドキュメントのページ番号が取得できた場合にのみ、ページ番号を表示
                         if "main_page_number" in message["content"]:
-                            st.success(f"{message['content']['main_file_path']} ({ct.PAGE_NUMBER_TEXT}{utils.page_numbering(message['content']['main_page_number'])})", icon=icon)
+                            st.success(format_source_with_page_number(message['content']['main_file_path'], message['content']['main_page_number']), icon=icon)
                         else:
                             st.success(f"{message['content']['main_file_path']}", icon=icon)
                         
@@ -93,7 +93,7 @@ def display_conversation_log():
                                 icon = utils.get_source_icon(sub_choice['source'])
                                 # 参照元ドキュメントのページ番号が取得できた場合にのみ、ページ番号を表示
                                 if "page_number" in sub_choice:
-                                    st.info(f"{sub_choice['source']} ({ct.PAGE_NUMBER_TEXT}{utils.page_numbering(sub_choice['page_number'])})", icon=icon)
+                                    st.info(format_source_with_page_number(sub_choice['source'], sub_choice['page_number']), icon=icon)
                                 else:
                                     st.info(f"{sub_choice['source']}", icon=icon)
                     # ファイルのありかの情報が取得できなかった場合、LLMからの回答のみ表示
@@ -148,7 +148,7 @@ def display_search_llm_response(llm_response):
             # ページ番号を取得
             main_page_number = llm_response["context"][0].metadata["page"]
             # 「メインドキュメントのファイルパス」と「ページ番号」を表示
-            st.success(f"{main_file_path} ({ct.PAGE_NUMBER_TEXT}{utils.page_numbering(main_page_number)})", icon=icon)
+            st.success(format_source_with_page_number(main_file_path, main_page_number), icon=icon)
         else:
             # 「メインドキュメントのファイルパス」を表示
             st.success(f"{main_file_path}", icon=icon)
@@ -204,7 +204,7 @@ def display_search_llm_response(llm_response):
                 # ページ番号が取得できない場合のための分岐処理
                 if "page_number" in sub_choice:
                     # 「サブドキュメントのファイルパス」と「ページ番号」を表示
-                    st.info(f"{sub_choice['source']} ({ct.PAGE_NUMBER_TEXT}{utils.page_numbering(sub_choice['page_number'])})", icon=icon)
+                    st.info(format_source_with_page_number(sub_choice['source'], sub_choice['page_number']), icon=icon)
                 else:
                     # 「サブドキュメントのファイルパス」を表示
                     st.info(f"{sub_choice['source']}", icon=icon)
@@ -222,7 +222,7 @@ def display_search_llm_response(llm_response):
         content["main_file_path"] = main_file_path
         # メインドキュメントのページ番号は、取得できた場合にのみ追加
         if "page" in llm_response["context"][0].metadata:
-            content["main_page_number"] = utils.page_numbering(main_page_number)
+            content["main_page_number"] = main_page_number
         # サブドキュメントの情報は、取得できた場合にのみ追加
         if sub_choices:
             content["sub_message"] = sub_message
@@ -282,9 +282,9 @@ def display_contact_llm_response(llm_response):
             # ページ番号が取得できた場合のみ、ページ番号を表示（ドキュメントによっては取得できない場合がある）
             if "page" in document.metadata:
                 # ページ番号を取得
-                page_number = utils.page_numbering(document.metadata["page"])
+                page_number = document.metadata["page"]
                 # 「ファイルパス」と「ページ番号」
-                file_info = f"{file_path} ({ct.PAGE_NUMBER_TEXT}{page_number})"
+                file_info = format_source_with_page_number(file_path, page_number)
             else:
                 # 「ファイルパス」のみ
                 file_info = f"{file_path}"
@@ -336,3 +336,17 @@ def display_sidebar():
         st.markdown("**【「社内問い合わせ」を選択した場合】**")
         st.info("質問・要望に対して、社内文書の情報をもとに回答を得られます。")
         st.code("【入力例】\n人事部に所属している従業員情報を一覧化して", wrap_lines=True, language=None)
+
+def format_source_with_page_number(source, page_number):
+    """
+    参照元ドキュメントの表示文字列を作成するヘルパー関数。
+    例: "<source> (ページNo.X)"の形式で返却する。
+    
+    Args:
+        source: ファイルパス
+        page_number: ページ番号
+    
+    Returns:
+        ページ番号付きのドキュメント表示文字列を返す。
+    """
+    return f"{source} ({ct.PAGE_NUMBER_TEXT}{utils.convert_page_number(page_number)})"

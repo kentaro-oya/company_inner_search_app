@@ -115,7 +115,7 @@ def get_llm_response(chat_message):
 
     return llm_response
 
-def page_numbering(page_number):
+def convert_page_number(page_number):
     """
     ページ番号を1から始まる形式に変換
 
