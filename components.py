@@ -318,9 +318,8 @@ def display_sidebar():
     """
     サイドバー表示
 
-    Args:
-
     Returns:
+        None
     """
     with st.sidebar:
         st.markdown("## 利用目的")
