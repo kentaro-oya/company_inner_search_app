@@ -57,7 +57,7 @@ WEB_URL_LOAD_TARGETS = [
 ]
 CHUNK_SIZE = 500
 CHUNK_OVERLAP = 50
-AMOUNT_OF_DOCS_TO_RETURN = 5
+NUM_DOCS_TO_RETURN = 5
 
 
 # ==========================================
