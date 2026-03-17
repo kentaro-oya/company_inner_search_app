@@ -25,6 +25,8 @@ LINK_SOURCE_ICON = ":material/link: "
 WARNING_ICON = ":material/warning:"
 ERROR_ICON = ":material/error:"
 SPINNER_TEXT = "回答生成中..."
+PAGE_NUMBER_INDEX_OFFSET = 1
+PAGE_NUMBER_TEXT = "ページNo."
 
 
 # ==========================================

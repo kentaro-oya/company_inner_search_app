@@ -114,3 +114,16 @@ def get_llm_response(chat_message):
     st.session_state.chat_history.extend([HumanMessage(content=chat_message), llm_response["answer"]])
 
     return llm_response
+
+
+def convert_page_number(page_number):
+    """
+    ページ番号を1から始まる形式に変換
+
+    Args:
+        page_number: 0から始まるページ番号
+
+    Returns:
+        1から始まるページ番号
+    """
+    return page_number + ct.PAGE_NUMBER_INDEX_OFFSET
