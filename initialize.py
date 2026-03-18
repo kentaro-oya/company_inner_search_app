@@ -6,7 +6,6 @@
 # ライブラリの読み込み
 ############################################################
 import os
-import csv
 import logging
 from logging.handlers import TimedRotatingFileHandler
 from uuid import uuid4
@@ -216,39 +215,49 @@ def file_load(path, docs_all):
 
     # 想定していたファイル形式の場合のみ読み込む
     if file_extension in ct.SUPPORTED_EXTENSIONS:
+        # ファイルの拡張子に合ったdata loaderを使ってデータ読み込み
+        loader = ct.SUPPORTED_EXTENSIONS[file_extension](path)
+        docs = loader.load()
+
         if file_extension == ".csv":
-            # CSVは全行を1ドキュメントに統合し、検索精度を向上させる
-            docs = load_csv_as_single_doc(path, file_name)
-        else:
-            # ファイルの拡張子に合ったdata loaderを使ってデータ読み込み
-            loader = ct.SUPPORTED_EXTENSIONS[file_extension](path)
-            docs = loader.load()
+            # CSVLoaderで読み込んだ各行ドキュメントを1ドキュメントに統合し、検索精度を向上させる
+            docs = adjust_csv_loader_docs(docs, path, file_name)
         docs_all.extend(docs)
 
 
-def load_csv_as_single_doc(path, file_name):
+def adjust_csv_loader_docs(docs, path, file_name):
     """
-    CSVファイルの全行を1つのドキュメントに統合して返す
+    CSVLoaderで読み込んだCSV行ドキュメント群を1つのドキュメントに統合して返す
     各行を「列名: 値 / 列名: 値 / ...」形式のテキストに変換することで
     セマンティック検索の精度を向上させる
 
     Args:
-        path: CSVファイルのパス
+        docs: CSVLoaderが返すDocumentのリスト
+        path: ファイルパス（metadataのsource用）
         file_name: ファイル名（メタデータ用）
 
     Returns:
         1要素のLangchainDocumentリスト
     """
     rows_text = []
-    with open(path, encoding="utf-8") as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            # 各行を「列名: 値 / 列名: 値 / ...」形式に変換
-            row_text = " / ".join([f"{k}: {v}" for k, v in row.items() if v])
-            rows_text.append(row_text)
+    for doc in docs:
+        row_pairs = []
+        for line in doc.page_content.split("\n"):
+            if ":" not in line:
+                continue
+            key, value = line.split(":", 1)
+            normalized_key = key.strip()
+            normalized_value = value.strip()
+            if normalized_key in ["row", "行番号", "source"]:
+                continue
+            if normalized_value:
+                row_pairs.append(f"{normalized_key}: {normalized_value}")
+        if row_pairs:
+            rows_text.append(" / ".join(row_pairs))
+
     # 全行を改行で結合して1ドキュメントに統合
     combined_text = "\n".join(rows_text)
-    return [LangchainDocument(page_content=combined_text, metadata={"source": file_name})]
+    return [LangchainDocument(page_content=combined_text, metadata={"source": path, "file_name": file_name})]
 
 
 def adjust_string(s):
