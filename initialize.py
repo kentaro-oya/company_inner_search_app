@@ -6,6 +6,7 @@
 # ライブラリの読み込み
 ############################################################
 import os
+import csv
 import logging
 from logging.handlers import TimedRotatingFileHandler
 from uuid import uuid4
@@ -18,6 +19,7 @@ from langchain_community.document_loaders import WebBaseLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
+from langchain.schema import Document as LangchainDocument
 import constants as ct
 
 
@@ -214,10 +216,39 @@ def file_load(path, docs_all):
 
     # 想定していたファイル形式の場合のみ読み込む
     if file_extension in ct.SUPPORTED_EXTENSIONS:
-        # ファイルの拡張子に合ったdata loaderを使ってデータ読み込み
-        loader = ct.SUPPORTED_EXTENSIONS[file_extension](path)
-        docs = loader.load()
+        if file_extension == ".csv":
+            # CSVは全行を1ドキュメントに統合し、検索精度を向上させる
+            docs = load_csv_as_single_doc(path, file_name)
+        else:
+            # ファイルの拡張子に合ったdata loaderを使ってデータ読み込み
+            loader = ct.SUPPORTED_EXTENSIONS[file_extension](path)
+            docs = loader.load()
         docs_all.extend(docs)
+
+
+def load_csv_as_single_doc(path, file_name):
+    """
+    CSVファイルの全行を1つのドキュメントに統合して返す
+    各行を「列名: 値 / 列名: 値 / ...」形式のテキストに変換することで
+    セマンティック検索の精度を向上させる
+
+    Args:
+        path: CSVファイルのパス
+        file_name: ファイル名（メタデータ用）
+
+    Returns:
+        1要素のLangchainDocumentリスト
+    """
+    rows_text = []
+    with open(path, encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            # 各行を「列名: 値 / 列名: 値 / ...」形式に変換
+            row_text = " / ".join([f"{k}: {v}" for k, v in row.items() if v])
+            rows_text.append(row_text)
+    # 全行を改行で結合して1ドキュメントに統合
+    combined_text = "\n".join(rows_text)
+    return [LangchainDocument(page_content=combined_text, metadata={"source": file_name})]
 
 
 def adjust_string(s):
