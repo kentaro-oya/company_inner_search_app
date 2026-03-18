@@ -42,7 +42,7 @@ APP_BOOT_MESSAGE = "アプリが起動されました。"
 # LLM設定系
 # ==========================================
 MODEL = "gpt-4o-mini"
-TEMPERATURE = 0.5
+TEMPERATURE = 0.2
 
 
 # ==========================================
@@ -58,9 +58,9 @@ SUPPORTED_EXTENSIONS = {
 WEB_URL_LOAD_TARGETS = [
     "https://generative-ai.web-camp.io/"
 ]
-CHUNK_SIZE = 500
-CHUNK_OVERLAP = 50
-NUM_DOCS_TO_RETURN = 5
+CHUNK_SIZE = 1000
+CHUNK_OVERLAP = 100
+NUM_DOCS_TO_RETURN = 10
 
 
 # ==========================================
